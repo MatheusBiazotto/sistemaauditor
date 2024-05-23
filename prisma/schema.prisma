@@ -1,0 +1,48 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model usuarios {
+  id      String    @id @default(dbgenerated("gen_random_uuid()"))
+  nome    String?
+  senha   String?
+  ativo   Boolean?
+  admin   Boolean?
+  cpf     String?   @db.VarChar(14)
+  infoPdf infoPdf[]
+}
+
+model infoPdf {
+  id           String        @id
+  data         DateTime?     @db.Date
+  cnpj         String[]      @db.VarChar(18)
+  nomeFantasia String?
+  nomeCliente  String?
+  email        String?
+  idUsuario    String?
+  usuarios     usuarios?     @relation(fields: [idUsuario], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_idUsuario")
+  produtosPdf  produtosPdf[]
+}
+
+model produtosPdf {
+  id                     String   @id
+  tipoProduto            String?
+  nomeProduto            String?
+  marcaProduto           String?
+  qtdTotalEmbalagem      Int?
+  qtdCompradoMensalmente Int?
+  diametro               Float?
+  qtdPapel               Float?
+  largura                Float?
+  tipoPapel              String?
+  pesoTotal              Float?
+  pesoFracionado         Float?
+  resultadoAuditoria     Float?
+  idPdf                  String?
+  infoPdf                infoPdf? @relation(fields: [idPdf], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_idPdf")
+}
