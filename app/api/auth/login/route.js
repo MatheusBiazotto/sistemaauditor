@@ -34,15 +34,6 @@ export async function POST(request) {
   const isPasswordValid = await bcrypt.compare(password, user.senha);
 
   if (isPasswordValid) {
-    if (user.admin) {
-      return NextResponse.json({
-        message:
-          "Usuário administrador não possui acesso ao formulário de auditoria!",
-        user: user,
-        status: 401,
-      });
-    }
-
     if (!user.ativo) {
       return NextResponse.json({
         message: "Usuário desativado! Entre em contato com o administrador.",
@@ -61,7 +52,7 @@ export async function POST(request) {
 
     return NextResponse.json({
       message: "Usuário autenticado!",
-      user: payload,
+      isAdmin: user.admin,
       status: 200,
     });
   } else {

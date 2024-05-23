@@ -5,7 +5,7 @@ export const config = {
   matcher: ["/((?!api|_next/static|_next/image|.*\\.png$).*)"],
 };
 
-const publicRoutes = ["/", "/admin"];
+const publicRoutes = ["/"];
 const publicResources = ["/logo-2023102012330337783.jpeg"];
 
 export async function middleware(req) {

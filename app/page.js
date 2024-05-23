@@ -36,20 +36,21 @@ export default function Home() {
   }
 
   async function submitLogin() {
-    const response = await axios.post("/api/auth", {
+    const response = await axios.post("/api/auth/login", {
       cpf: cpf,
       password: password,
     });
-
-    console.log(response.data);
 
     if (response.data.status === 200) {
       toast.success(response.data.message, {
         position: "bottom-right",
         theme: "dark",
       });
-
-      router.push("/auditoria");
+      if (response.data.isAdmin) {
+        router.push("/admin");
+      } else {
+        router.push("/auditoria");
+      }
     } else {
       toast.error(response.data.message, {
         position: "bottom-right",
