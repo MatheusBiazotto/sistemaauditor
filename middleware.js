@@ -6,7 +6,7 @@ export const config = {
 };
 
 const publicRoutes = ["/"];
-const publicResources = ["/logo-2023102012330337783.jpeg"];
+const publicResources = ["/logo-2023102012330337783.jpeg", "/qrcode.png"];
 
 export async function middleware(req) {
   const pathname = req.nextUrl.pathname;

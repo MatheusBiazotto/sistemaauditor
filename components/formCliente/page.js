@@ -9,7 +9,14 @@ import { Tabs, Tab } from "@nextui-org/tabs";
 import { Select, SelectItem } from "@nextui-org/react";
 import { FaTrash } from "react-icons/fa6";
 import { FaRegEdit } from "react-icons/fa";
-import {Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, useDisclosure} from "@nextui-org/react";
+import {
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  useDisclosure,
+} from "@nextui-org/react";
 import {
   Table,
   TableHeader,
@@ -17,17 +24,20 @@ import {
   TableBody,
   TableRow,
   TableCell,
-  User,
-  Chip,
   Tooltip,
   getKeyValue,
 } from "@nextui-org/react";
 import { FaToiletPaper } from "react-icons/fa6";
 import { FaFilePdf } from "react-icons/fa6";
+import PdfCliente from "@/components/pdfCliente/pdf";
+import { pdf } from "@react-pdf/renderer";
 
-export default function FormCliente() {
+export default function FormCliente({ userData }) {
   const [isFormCliente, setIsFormCliente] = useState(true);
   const [isFormProduct, setIsFormProduct] = useState(false);
+  const { isOpen, onOpen, onOpenChange } = useDisclosure();
+
+  const [productSelectedKey, setProductSelectedKey] = useState(0);
 
   //Info Clientes
   const [cnpj, setCnpj] = useState("");
@@ -50,9 +60,12 @@ export default function FormCliente() {
   const [isFormPapelToalha, setIsFormPapelToalha] = useState(false);
   const [isFormPapelHigienico, setIsFormPapelHigienico] = useState(false);
   const [isFormBobina, setIsFormBobina] = useState(false);
-  // fim mobile
 
   const columns = [
+    {
+      key: "key",
+      label: "ID",
+    },
     {
       key: "tipoProduto",
       label: "TIPO",
@@ -143,9 +156,163 @@ export default function FormCliente() {
     setNomeCliente(e.target.value);
   }
 
-  function saveProduct(e) {
-    console.log(e.target.name);
+  function generateModalEditLayout() {
+    const selectedProduct = rows.find(
+      (row) => row.key === Number(productSelectedKey)
+    );
+
+    if (selectedProduct.tipoProduto === "Bobina de Papel Toalha") {
+      return (
+        <div className="flex flex-col gap-4 justify-center">
+          <Input
+            type="text"
+            onChange={handleMarcaProduto}
+            label="Marca do Produto"
+            placeholder={selectedProduct.marcaProduto}
+          />
+          <Input
+            type="number"
+            onChange={handleQtdFolhasRolos}
+            label="Quantidade de Folhas (padrão é 1000)"
+            placeholder={selectedProduct.qtdFolhasRolos}
+          />
+          <Input
+            type="number"
+            onChange={handleQtdFardos}
+            label="Quantidade de Fardos entregue/comprado"
+            placeholder={selectedProduct.qtdFardos}
+          />
+          <h2 className="text-center text-black text-lg font-bold">
+            Metragens
+          </h2>
+          <Input
+            type="number"
+            onChange={handleDiametroBobina}
+            label="Diâmetro da bobina"
+            placeholder={selectedProduct.metragens.diametroBobina}
+          />
+          <Input
+            type="number"
+            onChange={handleMedidaBobina}
+            label="Medida da quantidade de papel na Bobina"
+            placeholder={selectedProduct.metragens.medidaBobina}
+          />
+          <Input
+            type="number"
+            onChange={handleLarguraBobina}
+            label="Largura da Bobina"
+            placeholder={selectedProduct.metragens.larguraBobina}
+          />
+
+          <Select
+            onChange={handleTipoFolha}
+            label="Folha simples ou dupla"
+            className="w-full text-black"
+            placeholder={selectedProduct.metragens.tipoFolha}
+          >
+            {itemSelect.map((item) => (
+              <SelectItem className="text-black" key={item} value={item}>
+                {item}
+              </SelectItem>
+            ))}
+          </Select>
+        </div>
+      );
+    } else {
+      return (
+        <div className="flex flex-col gap-4 justify-center">
+          <Input
+            onChange={handleMarcaProduto}
+            type="text"
+            label="Marca do Produto"
+            placeholder={selectedProduct.marcaProduto}
+          />
+          <Input
+            type="number"
+            onChange={handleQtdFolhasRolos}
+            label="Quantidade de Folhas (padrão é 1000)"
+            placeholder={selectedProduct.qtdFolhasRolos}
+          />
+          <Input
+            type="number"
+            onChange={handleQtdFardos}
+            label="Quantidade de Fardos entregue/comprado"
+            placeholder={selectedProduct.qtdFardos}
+          />
+        </div>
+      );
+    }
+  }
+
+  function editProduct() {
     if (!marcaProduto || !qtdFolhasRolos || !qtdFardos) {
+      toast.warning("Preencha todos os campos para editar o produto.", {
+        position: "bottom-right",
+        theme: "dark",
+      });
+      return;
+    }
+
+    const rowsAntiga = JSON.parse(JSON.stringify(rows));
+    const selectedProduct = rowsAntiga.find(
+      (row) => row.key === Number(productSelectedKey)
+    );
+
+    if (selectedProduct.tipoProduto === "Bobina de Papel Toalha") {
+      if (!diametroBobina || !medidaBobina || !larguraBobina || !tipoFolha) {
+        toast.warning("Preencha todos os campos para editar o produto.", {
+          position: "bottom-right",
+          theme: "dark",
+        });
+        return;
+      }
+      if (marcaProduto !== "") selectedProduct.marcaProduto = marcaProduto;
+      if (qtdFolhasRolos !== 0) selectedProduct.qtdFolhasRolos = qtdFolhasRolos;
+      if (qtdFardos !== 0) selectedProduct.qtdFardos = qtdFardos;
+      if (diametroBobina !== 0)
+        selectedProduct.metragens.diametroBobina = diametroBobina;
+      if (medidaBobina !== 0)
+        selectedProduct.metragens.medidaBobina = medidaBobina;
+      if (larguraBobina !== 0)
+        selectedProduct.metragens.larguraBobina = larguraBobina;
+      if (tipoFolha !== "") selectedProduct.metragens.tipoFolha = tipoFolha;
+    } else {
+      if (marcaProduto !== "") selectedProduct.marcaProduto = marcaProduto;
+      if (qtdFolhasRolos !== 0) selectedProduct.qtdFolhasRolos = qtdFolhasRolos;
+      if (qtdFardos !== 0) selectedProduct.qtdFardos = qtdFardos;
+    }
+
+    setRows(rowsAntiga);
+    setMarcaProduto("");
+    setQtdFolhasRolos(0);
+    setQtdFardos(0);
+    setDiametroBobina(0);
+    setMedidaBobina(0);
+    setLarguraBobina(0);
+    setTipoFolha("");
+
+    toast.success(
+      `Produto com ID "${productSelectedKey}" editado com sucesso!`,
+      {
+        position: "bottom-right",
+        theme: "dark",
+      }
+    );
+  }
+
+  function saveProduct(e) {
+    if (!marcaProduto || !qtdFolhasRolos || !qtdFardos) {
+      toast.warning("Preencha todos os campos para salvar o produto.", {
+        position: "bottom-right",
+        theme: "dark",
+      });
+      return;
+    }
+
+    if (
+      e.target.name === "bobinaPapel" &&
+      (!diametroBobina || !medidaBobina || !larguraBobina || !tipoFolha)
+    ) {
       toast.warning("Preencha todos os campos para salvar o produto.", {
         position: "bottom-right",
         theme: "dark",
@@ -213,11 +380,81 @@ export default function FormCliente() {
     });
   }
 
+  async function generatePDF() {
+    if (!cnpj || !nomeFantasia || !email || !nomeCliente) {
+      toast.warning("Preencha todos os campos para gerar o relatório.", {
+        position: "bottom-right",
+        theme: "dark",
+      });
+      return;
+    }
+    if (rows.length === 0) {
+      toast.warning("Adicione pelo menos um produto para gerar o relatório.", {
+        position: "bottom-right",
+        theme: "dark",
+      });
+      return;
+    }
+
+    toast.loading("Gerando relatório...", {
+      position: "bottom-right",
+      theme: "dark",
+      autoClose: 5000,
+    });
+
+    const dados = {
+      nomeFantasia: nomeFantasia,
+      cnpj: cnpj,
+      email: email,
+      nomeCliente: nomeCliente,
+      data: new Date().toLocaleDateString(),
+      produtos: rows,
+      consultor: userData.nome,
+      userId: userData.id,
+    };
+    console.log(dados);
+
+    const blob = await pdf(<PdfCliente dados={dados} />).toBlob();
+
+    toast.dismiss();
+
+    const url = URL.createObjectURL(blob);
+    window.open(url, "_blank");
+  }
+
   return (
     <div className="flex flex-col w-full items-center justify-center">
       <form className="flex flex-col items-center justify-center flex-wrap gap-4 w-full lg:w-auto p-4">
         {isFormCliente && !isFormProduct ? (
           <>
+            <Modal backdrop="blur" isOpen={isOpen} onOpenChange={onOpenChange}>
+              <ModalContent>
+                {(onClose) => (
+                  <>
+                    <ModalHeader className="flex flex-col gap-1 text-black">
+                      Editar Produto
+                    </ModalHeader>
+                    <ModalBody className="text-black">
+                      {generateModalEditLayout()}
+                    </ModalBody>
+                    <ModalFooter>
+                      <Button color="danger" variant="light" onPress={onClose}>
+                        Cancelar
+                      </Button>
+                      <Button
+                        color="primary"
+                        onClick={() => {
+                          editProduct();
+                          onClose();
+                        }}
+                      >
+                        Salvar
+                      </Button>
+                    </ModalFooter>
+                  </>
+                )}
+              </ModalContent>
+            </Modal>
             <div className="grid grid-cols-[repeat(auto-fit,_minmax(0,_300px))] justify-center lg:grid-cols-2 gap-4 w-full p-4">
               <div className="flex flex-col gap-4 justify-center">
                 <h1 className="text-center text-white text-2xl font-bold">
@@ -264,7 +501,9 @@ export default function FormCliente() {
                   }}
                   color="primary"
                   isStriped
-                  aria-label="Example table with dynamic content"
+                  onRowAction={async (key) => {
+                    await setProductSelectedKey(key);
+                  }}
                 >
                   <TableHeader columns={columns}>
                     {(column) => (
@@ -288,7 +527,10 @@ export default function FormCliente() {
                                     className="text-white"
                                     content="Editar"
                                   >
-                                    <span className="text-lg text-primary-500 cursor-pointer active:opacity-50">
+                                    <span
+                                      onClick={onOpen}
+                                      className="text-lg text-primary-500 cursor-pointer active:opacity-50"
+                                    >
                                       <FaRegEdit />
                                     </span>
                                   </Tooltip>
@@ -323,7 +565,10 @@ export default function FormCliente() {
                 <FaToiletPaper size={24} />
                 Cadastrar Produtos
               </Button>
-              <Button className="w-full text-white bg-emerald-500">
+              <Button
+                onClick={generatePDF}
+                className="w-full text-white bg-emerald-500"
+              >
                 <FaFilePdf size={24} />
                 Gerar Relatório
               </Button>
