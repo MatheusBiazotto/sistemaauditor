@@ -7,7 +7,6 @@ import {
   Document,
   StyleSheet,
   Image,
-  Font,
 } from "@react-pdf/renderer";
 
 const styles = StyleSheet.create({
@@ -94,13 +93,7 @@ export default function PdfCliente({ dados }) {
                   ou através do QRCODE:
                 </Text>
               </View>
-              <View
-                style={{
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "flex-end",
-                }}
-              >
+              <View>
                 <Image
                   style={{ width: "100px" }}
                   src="/qrcode.png"

@@ -36,6 +36,7 @@ export default function FormCliente({ userData }) {
   const [isFormCliente, setIsFormCliente] = useState(true);
   const [isFormProduct, setIsFormProduct] = useState(false);
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const modal2 = useDisclosure();
 
   const [productSelectedKey, setProductSelectedKey] = useState(0);
 
@@ -245,27 +246,12 @@ export default function FormCliente({ userData }) {
   }
 
   function editProduct() {
-    if (!marcaProduto || !qtdFolhasRolos || !qtdFardos) {
-      toast.warning("Preencha todos os campos para editar o produto.", {
-        position: "bottom-right",
-        theme: "dark",
-      });
-      return;
-    }
-
     const rowsAntiga = JSON.parse(JSON.stringify(rows));
     const selectedProduct = rowsAntiga.find(
       (row) => row.key === Number(productSelectedKey)
     );
 
     if (selectedProduct.tipoProduto === "Bobina de Papel Toalha") {
-      if (!diametroBobina || !medidaBobina || !larguraBobina || !tipoFolha) {
-        toast.warning("Preencha todos os campos para editar o produto.", {
-          position: "bottom-right",
-          theme: "dark",
-        });
-        return;
-      }
       if (marcaProduto !== "") selectedProduct.marcaProduto = marcaProduto;
       if (qtdFolhasRolos !== 0) selectedProduct.qtdFolhasRolos = qtdFolhasRolos;
       if (qtdFardos !== 0) selectedProduct.qtdFardos = qtdFardos;
@@ -296,6 +282,7 @@ export default function FormCliente({ userData }) {
       {
         position: "bottom-right",
         theme: "dark",
+        autoClose: 5000,
       }
     );
   }
@@ -305,6 +292,7 @@ export default function FormCliente({ userData }) {
       toast.warning("Preencha todos os campos para salvar o produto.", {
         position: "bottom-right",
         theme: "dark",
+        autoClose: 5000,
       });
       return;
     }
@@ -316,6 +304,7 @@ export default function FormCliente({ userData }) {
       toast.warning("Preencha todos os campos para salvar o produto.", {
         position: "bottom-right",
         theme: "dark",
+        autoClose: 5000,
       });
       return;
     }
@@ -377,7 +366,29 @@ export default function FormCliente({ userData }) {
     toast.success("Produto salvo com sucesso!", {
       position: "bottom-right",
       theme: "dark",
+      autoClose: 5000,
     });
+  }
+
+  function deleteProduct() {
+    const rowsAntiga = JSON.parse(JSON.stringify(rows));
+    const selectedProduct = rowsAntiga.find(
+      (row) => row.key === Number(productSelectedKey)
+    );
+
+    const index = rowsAntiga.indexOf(selectedProduct);
+    rowsAntiga.splice(index, 1);
+
+    setRows(rowsAntiga);
+
+    toast.success(
+      `Produto com ID "${productSelectedKey}" apagado com sucesso!`,
+      {
+        position: "bottom-right",
+        theme: "dark",
+        autoClose: 5000,
+      }
+    );
   }
 
   async function generatePDF() {
@@ -385,6 +396,7 @@ export default function FormCliente({ userData }) {
       toast.warning("Preencha todos os campos para gerar o relatório.", {
         position: "bottom-right",
         theme: "dark",
+        autoClose: 5000,
       });
       return;
     }
@@ -392,6 +404,7 @@ export default function FormCliente({ userData }) {
       toast.warning("Adicione pelo menos um produto para gerar o relatório.", {
         position: "bottom-right",
         theme: "dark",
+        autoClose: 5000,
       });
       return;
     }
@@ -412,7 +425,6 @@ export default function FormCliente({ userData }) {
       consultor: userData.nome,
       userId: userData.id,
     };
-    console.log(dados);
 
     const blob = await pdf(<PdfCliente dados={dados} />).toBlob();
 
@@ -420,6 +432,27 @@ export default function FormCliente({ userData }) {
 
     const url = URL.createObjectURL(blob);
     window.open(url, "_blank");
+  }
+
+  function clearData() {
+    setCnpj("");
+    setNomeFantasia("");
+    setEmail("");
+    setNomeCliente("");
+    setMarcaProduto("");
+    setQtdFolhasRolos(0);
+    setQtdFardos(0);
+    setDiametroBobina(0);
+    setMedidaBobina(0);
+    setLarguraBobina(0);
+    setTipoFolha("");
+    setRows([]);
+
+    toast.success("Dados limpos com sucesso!", {
+      position: "bottom-right",
+      theme: "dark",
+      autoClose: 5000,
+    });
   }
 
   return (
@@ -449,6 +482,41 @@ export default function FormCliente({ userData }) {
                         }}
                       >
                         Salvar
+                      </Button>
+                    </ModalFooter>
+                  </>
+                )}
+              </ModalContent>
+            </Modal>
+            <Modal
+              backdrop="blur"
+              isOpen={modal2.isOpen}
+              onOpenChange={modal2.onOpenChange}
+            >
+              <ModalContent>
+                {(onClose) => (
+                  <>
+                    <ModalHeader className="flex flex-col gap-1 text-black">
+                      Apagar Produto
+                    </ModalHeader>
+                    <ModalBody className="text-black">
+                      <span className="text-justify">
+                        Tem certeza que deseja apagar o produto com ID "
+                        {productSelectedKey}"? Essa ação não pode ser desfeita.
+                      </span>
+                    </ModalBody>
+                    <ModalFooter>
+                      <Button color="danger" variant="light" onPress={onClose}>
+                        Cancelar
+                      </Button>
+                      <Button
+                        color="primary"
+                        onClick={() => {
+                          deleteProduct();
+                          onClose();
+                        }}
+                      >
+                        Apagar
                       </Button>
                     </ModalFooter>
                   </>
@@ -539,7 +607,10 @@ export default function FormCliente({ userData }) {
                                     className="text-white"
                                     content="Apagar"
                                   >
-                                    <span className="text-lg text-danger cursor-pointer active:opacity-50">
+                                    <span
+                                      onClick={modal2.onOpen}
+                                      className="text-lg text-danger cursor-pointer active:opacity-50"
+                                    >
                                       <FaTrash />
                                     </span>
                                   </Tooltip>
@@ -571,6 +642,10 @@ export default function FormCliente({ userData }) {
               >
                 <FaFilePdf size={24} />
                 Gerar Relatório
+              </Button>
+              <Button onClick={clearData} color="danger" className="w-full">
+                <FaTrash size={24} />
+                Limpar Dados
               </Button>
             </div>
           </>
