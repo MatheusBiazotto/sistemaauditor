@@ -35,7 +35,8 @@ export default function Home() {
     setPassword(e.target.value);
   }
 
-  async function submitLogin() {
+  async function submitLogin(e) {
+    if (e.key !== "Enter") return;
     const response = await axios.post("/api/auth/login", {
       cpf: cpf,
       password: password,
@@ -61,9 +62,10 @@ export default function Home() {
 
   return (
     <main className="flex overflow-y-hidden min-h-screen flex-col items-center justify-center flex-wrap">
-      <form className="flex flex-col gap-4 p-4 w-96">
+      <form onKeyDown={submitLogin} className="flex flex-col gap-4 p-4 w-96">
         <h1 className="text-center text-2xl font-bold">Área de Acesso</h1>
         <Input
+          autoFocus
           onChange={handleCPFChange}
           className="w-full"
           type="text"

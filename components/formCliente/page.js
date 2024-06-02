@@ -31,6 +31,7 @@ import { FaToiletPaper } from "react-icons/fa6";
 import { FaFilePdf } from "react-icons/fa6";
 import PdfCliente from "@/components/pdfCliente/pdf";
 import { pdf } from "@react-pdf/renderer";
+import axios from "axios";
 
 export default function FormCliente({ userData }) {
   const [isFormCliente, setIsFormCliente] = useState(true);
@@ -91,6 +92,30 @@ export default function FormCliente({ userData }) {
   const [rows, setRows] = useState([]);
 
   const itemSelect = ["Folha simples", "Folha dupla"];
+
+  function openFormPapelToalha() {
+    setIsFormPapelToalha(true);
+    setIsFormPapelHigienico(false);
+    setIsFormBobina(false);
+  }
+
+  function openFormPapelHigienico() {
+    setIsFormPapelToalha(false);
+    setIsFormPapelHigienico(true);
+    setIsFormBobina(false);
+  }
+
+  function openFormBobina() {
+    setIsFormPapelToalha(false);
+    setIsFormPapelHigienico(false);
+    setIsFormBobina(true);
+  }
+
+  function closeForm() {
+    setIsFormPapelToalha(false);
+    setIsFormPapelHigienico(false);
+    setIsFormBobina(false);
+  }
 
   const cnpjFormat = (value) => {
     value.replace(/\D/g, "");
@@ -426,12 +451,23 @@ export default function FormCliente({ userData }) {
       userId: userData.id,
     };
 
-    const blob = await pdf(<PdfCliente dados={dados} />).toBlob();
+    const retornoAPI = await axios.post("/api/pdf/savePDF", { payload: dados });
 
-    toast.dismiss();
+    if (retornoAPI.data.status === 200) {
+      const blob = await pdf(<PdfCliente dados={dados} />).toBlob();
 
-    const url = URL.createObjectURL(blob);
-    window.open(url, "_blank");
+      toast.dismiss();
+
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank");
+    } else {
+      toast.dismiss();
+      toast.error("Erro ao gerar o relatório. Tente novamente mais tarde.", {
+        position: "bottom-right",
+        theme: "dark",
+        autoClose: 5000,
+      });
+    }
   }
 
   function clearData() {
@@ -559,7 +595,7 @@ export default function FormCliente({ userData }) {
               </div>
               <div className="flex flex-col w-full items-center gap-4">
                 <h1 className="text-center text-white text-2xl font-bold">
-                  Produtos cadastrados
+                  Produtos auditados
                 </h1>
                 <Table
                   isHeaderSticky
@@ -820,31 +856,162 @@ export default function FormCliente({ userData }) {
             </Tabs>
 
             <div className="flex flex-col w-full items-center justify-center lg:hidden gap-4">
-              <Button color="primary">Papel Toalha Interfolhado</Button>
-              <Button color="primary">Papel Higiênico Rolão</Button>
-              <Button color="primary">Bobina de Papel Toalha</Button>
+              <Button onClick={openFormPapelToalha} color="primary">
+                Papel Toalha Interfolhado
+              </Button>
+              <Button onClick={openFormPapelHigienico} color="primary">
+                Papel Higiênico Rolão
+              </Button>
+              <Button onClick={openFormBobina} color="primary">
+                Bobina de Papel Toalha
+              </Button>
 
               {isFormPapelToalha ? (
                 <>
-                  <Input type="text" label="Marca do produto" />
                   <Input
+                    onChange={handleMarcaProduto}
+                    type="text"
+                    label="Marca do produto"
+                  />
+                  <Input
+                    onChange={handleQtdFolhasRolos}
                     type="text"
                     className="w-full"
                     label="Quantidade de folhas (padrão é 1000)"
                   />
                   <Input
+                    onChange={handleQtdFardos}
                     type="text"
                     label="Quantidade de fardos entregues/comprados"
                   />
                   <div className="flex gap-4">
-                    <Button className="w-full" color="danger">
+                    <Button
+                      onClick={backForm}
+                      className="w-full"
+                      color="danger"
+                    >
                       Voltar
                     </Button>
-                    <Button className="w-full" color="primary">
+                    <Button
+                      name="papelToalha"
+                      onClick={saveProduct}
+                      className="w-full"
+                      color="primary"
+                    >
                       Salvar
                     </Button>
                   </div>
                 </>
+              ) : isFormPapelHigienico ? (
+                <>
+                  <div className="flex items-center justify-center flex-col flex-wrap p-4 gap-4 w-full">
+                    <Input
+                      onChange={handleMarcaProduto}
+                      name="marcaPapelHigienico"
+                      type="text"
+                      label="Marca do produto"
+                    />
+                    <Input
+                      type="number"
+                      onChange={handleQtdFolhasRolos}
+                      name="qtdRolosPapelHigienico"
+                      className="w-full"
+                      label="Quantidade de rolos especificada na embalagem"
+                    />
+                    <Input
+                      onChange={handleQtdFardos}
+                      type="number"
+                      name="qtdFardosPapelHigienico"
+                      label="Quantidade de fardos entregue/comprado"
+                    />
+                    <div className="flex gap-4">
+                      <Button
+                        onClick={backForm}
+                        className="w-full"
+                        color="danger"
+                      >
+                        Voltar
+                      </Button>
+                      <Button
+                        onClick={saveProduct}
+                        name="papelHigienico"
+                        className="w-full"
+                        color="primary"
+                      >
+                        Salvar
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              ) : isFormBobina ? (
+                <div className="flex items-center justify-center flex-col flex-wrap p-4 gap-4 w-full">
+                  <Input
+                    onChange={handleMarcaProduto}
+                    type="text"
+                    label="Marca do Produto"
+                  />
+                  <Input
+                    onChange={handleQtdFolhasRolos}
+                    type="number"
+                    className="w-full"
+                    label="Quantidade de Folhas (padrão é 1000)"
+                  />
+                  <Input
+                    type="number"
+                    onChange={handleQtdFardos}
+                    label="Quantidade de Fardos entregue/comprado"
+                  />
+                  <h2 className="text-center text-white text-lg font-bold">
+                    Metragens
+                  </h2>
+                  <Input
+                    onChange={handleDiametroBobina}
+                    type="number"
+                    label="Diâmetro da bobina"
+                  />
+                  <Input
+                    onChange={handleMedidaBobina}
+                    type="number"
+                    label="Medida da quantidade de papel na Bobina"
+                  />
+                  <Input
+                    onChange={handleLarguraBobina}
+                    type="number"
+                    label="Largura da Bobina"
+                  />
+                  <Select
+                    onChange={handleTipoFolha}
+                    label="Folha simples ou dupla"
+                    className="w-full text-black"
+                  >
+                    {itemSelect.map((item) => (
+                      <SelectItem
+                        className="text-black"
+                        key={item}
+                        value={item}
+                      >
+                        {item}
+                      </SelectItem>
+                    ))}
+                  </Select>
+                  <div className="flex gap-4">
+                    <Button
+                      onClick={backForm}
+                      className="w-full"
+                      color="danger"
+                    >
+                      Voltar
+                    </Button>
+                    <Button
+                      onClick={saveProduct}
+                      name="bobinaPapel"
+                      className="w-full"
+                      color="primary"
+                    >
+                      Salvar
+                    </Button>
+                  </div>
+                </div>
               ) : null}
             </div>
           </>

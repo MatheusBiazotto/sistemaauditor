@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
 }
 
 datasource db {
@@ -18,19 +18,19 @@ model usuarios {
 }
 
 model infoPdf {
-  id           String        @id
+  id           String        @id @default(dbgenerated("gen_random_uuid()"))
   data         DateTime?     @db.Date
-  cnpj         String[]      @db.VarChar(18)
   nomeFantasia String?
   nomeCliente  String?
   email        String?
   idUsuario    String?
+  cnpj         String?       @db.VarChar(18)
   usuarios     usuarios?     @relation(fields: [idUsuario], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_idUsuario")
   produtosPdf  produtosPdf[]
 }
 
 model produtosPdf {
-  id                     String   @id
+  id                     String  @id @default(dbgenerated("gen_random_uuid()"))
   tipoProduto            String?
   nomeProduto            String?
   marcaProduto           String?
@@ -43,6 +43,6 @@ model produtosPdf {
   pesoTotal              Float?
   pesoFracionado         Float?
   resultadoAuditoria     Float?
-  idPdf                  String?
-  infoPdf                infoPdf? @relation(fields: [idPdf], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_idPdf")
+  idPdf                  String
+  infoPdf                infoPdf @relation(fields: [idPdf], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_idPdf")
 }
